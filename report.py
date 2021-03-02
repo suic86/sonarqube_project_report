@@ -67,7 +67,7 @@ class Report:
     # duplicated_lines_density
     # ncloc - number of lines of code
 
-    metrics = {
+    metrics = [
         "alert_status",
         "bugs",
         "reliability_rating",
@@ -80,7 +80,7 @@ class Report:
         "coverage",
         "duplicated_lines_density",
         "ncloc"
-    }
+    ]
 
     def __init__(self, api):
         self.api = api
