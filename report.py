@@ -25,10 +25,9 @@ class Api:
         params["ps"] = self.__class__.PAGE_SIZE
         r = requests.get(url, params=params, auth=self.get_auth())
 
-        if r.status_code == 200:
-            return r.json()
-        else:
+        if r.status_code != requests.codes.ok:
             raise ConnectionError("API request failed")
+        return r.json()
 
     def get_projects(self, tags=None):
         params = {"f": "analysisDate"}
@@ -37,8 +36,6 @@ class Api:
 
         return self.api_call_authenticated(
             self.api_base + self.__class__.API_PATH_PROJECTS, params=params
-        )
-
     def get_measures(self, projects, metrics):
         params = {"projectKeys": projects, "metricKeys": metrics}
 
