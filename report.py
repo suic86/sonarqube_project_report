@@ -7,6 +7,7 @@ import numpy as np
 from itertools import zip_longest
 from requests.auth import HTTPBasicAuth
 
+
 class Api:
 
     API_PATH_PROJECTS = "components/search_projects"
@@ -21,7 +22,7 @@ class Api:
         return HTTPBasicAuth(self.user_token, "")
 
     def api_call_authenticated(self, url, params):
-        params["ps"] = self.PAGE_SIZE
+        params["ps"] = self.__class__.PAGE_SIZE
         r = requests.get(url, params=params, auth=self.get_auth())
 
         if r.status_code == 200:
@@ -35,27 +36,20 @@ class Api:
             params["filter"] = "tags = {}".format(tags)
 
         return self.api_call_authenticated(
-            self.api_base + self.API_PATH_PROJECTS,
-            params
+            self.api_base + self.__class__.API_PATH_PROJECTS, params=params
         )
 
     def get_measures(self, projects, metrics):
-        params = {
-            'projectKeys': projects,
-            'metricKeys': metrics
-        }
+        params = {"projectKeys": projects, "metricKeys": metrics}
 
         return self.api_call_authenticated(
-            self.api_base + self.API_PATH_MEASURES,
-            params=params
+            self.api_base + self.__class__.API_PATH_MEASURES, params=params
         )
 
 
 class Report:
     # metrics
     # see https://docs.sonarqube.org/latest/user-guide/metric-definitions/ for detailed description
-    #
-    # alert_status - passed/failed
     # bugs - number of bugs
     # reliability_rating - based on bugs, A, B, ...
     # vulnerabilities
@@ -80,8 +74,10 @@ class Report:
         "sqale_rating",
         "coverage",
         "duplicated_lines_density",
-        "ncloc"
+        "ncloc",
     ]
+    
+    
 
     def __init__(self, api):
         self.api = api
@@ -91,7 +87,7 @@ class Report:
         projects.set_index("key", inplace=True)
         project_keys = projects.index.tolist()
 
-        for metric in self.metrics:
+        for metric in self.__class__.metrics:
             projects[metric] = np.nan
 
         # api does not accept more than 50 projects at once
@@ -107,7 +103,7 @@ class Report:
         return projects
 
     def get_measures(self, project_list):
-        measures = self.api.get_measures(','.join(project_list), ",".join(self.metrics))
+        measures = self.api.get_measures(",".join(project_list), ",".join(self.__class__.metrics))
         return measures["measures"]
 
     def get_projects(self, project_tag):
