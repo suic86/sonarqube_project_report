@@ -1,10 +1,11 @@
+import os
+
 import requests
 import pandas as pd
 import numpy as np
-from requests.auth import HTTPBasicAuth
-import os
-from itertools import zip_longest
 
+from itertools import zip_longest
+from requests.auth import HTTPBasicAuth
 
 class Api:
 
@@ -95,7 +96,7 @@ class Report:
 
         # api does not accept more than 50 projects at once
         # so query in 50 item chunks
-        for subset in Report.grouper(project_keys, 50):
+        for subset in grouper(project_keys, 50):
             filtered_subset = list(filter(None, subset))
 
             measures = self.get_measures(filtered_subset)
@@ -115,11 +116,11 @@ class Report:
 
         return projects
 
-    @staticmethod
-    # borrowed from stackoverflow
-    def grouper(iterable, n, fillvalue=None):
-        args = [iter(iterable)] * n
-        return zip_longest(*args, fillvalue=fillvalue)
+
+# borrowed from stackoverflow
+def grouper(iterable, n, fillvalue=None):
+    args = [iter(iterable)] * n
+    return zip_longest(*args, fillvalue=fillvalue)
 
 
 def main():
