@@ -18,12 +18,9 @@ class Api:
         self.api_base = api_base
         self.user_token = user_token
 
-    def get_auth(self):
-        return HTTPBasicAuth(self.user_token, "")
-
     def api_call_authenticated(self, url, params):
         params["ps"] = self.__class__.PAGE_SIZE
-        r = requests.get(url, params=params, auth=self.get_auth())
+        r = requests.get(url, params=params, auth=HTTPBasicAuth(self.user_token, ""))
 
         if r.status_code != requests.codes.ok:
             raise ConnectionError("API request failed")
@@ -36,11 +33,12 @@ class Api:
 
         return self.api_call_authenticated(
             self.api_base + self.__class__.API_PATH_PROJECTS, params=params
-    def get_measures(self, projects, metrics):
-        params = {"projectKeys": projects, "metricKeys": metrics}
+        )
 
+    def get_measures(self, projects, metrics):
         return self.api_call_authenticated(
-            self.api_base + self.__class__.API_PATH_MEASURES, params=params
+            self.api_base + self.__class__.API_PATH_MEASURES,
+            params={"projectKeys": projects, "metricKeys": metrics},
         )
 
 
@@ -73,8 +71,6 @@ class Report:
         "duplicated_lines_density",
         "ncloc",
     ]
-    
-    
 
     def __init__(self, api):
         self.api = api
@@ -100,7 +96,9 @@ class Report:
         return projects
 
     def get_measures(self, project_list):
-        measures = self.api.get_measures(",".join(project_list), ",".join(self.__class__.metrics))
+        measures = self.api.get_measures(
+            ",".join(project_list), ",".join(self.__class__.metrics)
+        )
         return measures["measures"]
 
     def get_projects(self, project_tag):
@@ -122,8 +120,11 @@ def main():
     parser = ArgumentParser()
     parser.add_argument("report_filename", type=str, help="Output report file name.")
     parser.add_argument("project_tag", nargs="?", type=str, help="Project tag.")
+    parser.add_argument("-t", "--report-type", choices=["csv", "xlsx"], default="csv")
     args = parser.parse_args()
+
     report_file = args.report_filename
+    report_type = args.report_type
     tag = args.project_tag
 
     api_base = os.getenv("SONARQUBE_API_BASE")
@@ -134,7 +135,12 @@ def main():
 
     df = report.get_project_report(tag)
 
-    df.to_csv(report_file)
+    if report_type == "csv":
+        df.to_csv(report_file)
+    elif report_type == "xlsx":
+        with pd.ExcelWriter(report_file) as writer:
+            df.to_excel(writer, sheet_name="SonarQube Report", index=False)
+
     print("Report generated at: {}".format(report_file))
 
 
